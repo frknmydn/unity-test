@@ -16,8 +16,16 @@ public class InteractiveComputer : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.E))
             {
-                uiPanel.SetActive(!uiPanel.activeSelf);
+                bool isActive = !uiPanel.activeSelf;
+                uiPanel.SetActive(isActive);
+                SetCursorVisibility(isActive);
             }
         }
+    }
+
+    void SetCursorVisibility(bool isVisible)
+    {
+        Cursor.visible = isVisible;
+        Cursor.lockState = isVisible ? CursorLockMode.None : CursorLockMode.Locked;
     }
 }
