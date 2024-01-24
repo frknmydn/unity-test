@@ -6,7 +6,7 @@ public class InteractiveComputer : MonoBehaviour
     public GameObject player;
     public GameObject uiPanel;
     public float interactionDistance = 8f;
-    private bool isUISceneOpen = false; // UIScene'in durumunu takip etmek için deðiþken
+    private bool isUISceneOpen = false; 
 
     void Update()
     {
@@ -14,14 +14,27 @@ public class InteractiveComputer : MonoBehaviour
 
         if (distance < interactionDistance)
         {
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKeyDown(KeyCode.E) && !uiPanel.activeSelf)
             {
-                bool isActive = !uiPanel.activeSelf;
-                uiPanel.SetActive(isActive);
-                SetCursorVisibility(isActive);
+                ToggleUIPanel();
             }
         }
+
+       //check for excape key
+        if (Input.GetKeyDown(KeyCode.Escape) && uiPanel.activeSelf)
+        {
+            ToggleUIPanel();
+        }
     }
+
+
+    void ToggleUIPanel()
+    {
+        bool isActive = !uiPanel.activeSelf;
+        uiPanel.SetActive(isActive);
+        SetCursorVisibility(isActive);
+    }
+
 
     void SetCursorVisibility(bool isVisible)
     {
