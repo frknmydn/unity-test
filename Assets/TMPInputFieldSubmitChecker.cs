@@ -1,7 +1,8 @@
 using UnityEngine;
-using TMPro; // TextMeshPro için gereklidir
+using TMPro;
 using UnityEngine.Networking;
-using System.Collections; // Coroutine için gereklidir
+using System.Collections;
+using System.Text;
 
 [System.Serializable]
 public class FlagResponse
@@ -9,54 +10,76 @@ public class FlagResponse
     public string room;
     public string difficulty;
     public string id;
-    public string flag_name;
+    public string[] FlagCategories;
+    public string FlagName;
 }
 
 public class TMPInputFieldSubmitChecker : MonoBehaviour
 {
-    public TMP_Text textMeshProOutput;  // Çýktý için TextMeshPro text nesnesi
-    public TMP_InputField tmpInputField; // Input için TMP_InputField
+    public TMP_Text textMeshProOutput;
+    public TMP_InputField inputFlagName;
+    public TMP_InputField inputEmail;
+    public TMP_InputField inputTeam;
+
+    private string flagRoom;
+    private string flagDifficulty;
+    private string flagId;
+    private string[] flagCategories;
 
     void Update()
     {
-        // Enter tuþuna basýldýðýnda kontrolü yap
-        if (tmpInputField != null &&  Input.GetKeyDown(KeyCode.Return))
+        if (Input.GetKeyDown(KeyCode.Return))
         {
-            StartCoroutine(CheckFlag(tmpInputField.text));
+            StartCoroutine(GetFlagByName(inputFlagName.text));
         }
     }
 
-    // Flag kontrolü için bir coroutine
-    IEnumerator CheckFlag(string flagName)
+    IEnumerator GetFlagByName(string flagName)
     {
         string url = $"https://xexcjda7ei.execute-api.us-west-1.amazonaws.com/prod/getflagbyname?name={flagName}";
-        UnityWebRequest request = UnityWebRequest.Get(url);
-        yield return request.SendWebRequest();
 
-        if (request.isNetworkError || request.isHttpError)
+        using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
-            Debug.LogError($"[TMPInputFieldSubmitChecker] Hata: {request.error}");
-            textMeshProOutput.text = "<color=#FF0000>WRONG</color>";  // Kýrmýzý renk
-        }
-        else
-        {
-            string response = request.downloadHandler.text;
-            Debug.Log($"[TMPInputFieldSubmitChecker] Yanýt: {response}");
+            yield return request.SendWebRequest();
 
-            // JSON cevabýný ayrýþtýr
-            FlagResponse flagResponse = JsonUtility.FromJson<FlagResponse>(response);
-
-            // Alanlarýn varlýðýný kontrol et
-            if (!string.IsNullOrEmpty(flagResponse.room) &&
-                !string.IsNullOrEmpty(flagResponse.difficulty) &&
-                !string.IsNullOrEmpty(flagResponse.id) &&
-                !string.IsNullOrEmpty(flagResponse.flag_name))
+            if (request.responseCode == 200)
             {
-                textMeshProOutput.text = "<color=#008000>TRUE</color>";  // Yeþil renk
+                FlagResponse flagResponse = JsonUtility.FromJson<FlagResponse>(request.downloadHandler.text);
+                flagRoom = flagResponse.room;
+                flagDifficulty = flagResponse.difficulty;
+                flagId = flagResponse.id;
+                flagCategories = flagResponse.FlagCategories;
+
+                StartCoroutine(SubmitFlag());
             }
             else
             {
-                textMeshProOutput.text = "<color=#FF0000>WRONG</color>";  // Kýrmýzý renk
+                textMeshProOutput.text = "<color=#FF0000>Flag retrieval failed</color>";
+            }
+        }
+    }
+
+    IEnumerator SubmitFlag()
+    {
+        string jsonData = $"{{\"flag\":\"FLAG{{{flagId}:{inputFlagName.text}}}\"}}";
+        string url = $"https://xexcjda7ei.execute-api.us-west-1.amazonaws.com/prod/submitflag?team_name={inputTeam.text}&challenge_id={flagId}&user_email={inputEmail.text}";
+
+        using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
+        {
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
+            request.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.responseCode == 200)
+            {
+                textMeshProOutput.text = "<color=#008000>Flag submitted successfully</color>";
+            }
+            else
+            {
+                textMeshProOutput.text = "<color=#FF0000>WRONG</color>";
             }
         }
     }
