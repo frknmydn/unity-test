@@ -20,6 +20,7 @@ public class TMPInputFieldSubmitChecker : MonoBehaviour
     public TMP_InputField inputFlagName;
     public TMP_InputField inputEmail;
     public TMP_InputField inputTeam;
+    private string apiKey = "YOUR_API_KEY_HERE"; // API anahtarý
 
     private string flagRoom;
     private string flagDifficulty;
@@ -40,6 +41,8 @@ public class TMPInputFieldSubmitChecker : MonoBehaviour
 
         using (UnityWebRequest request = UnityWebRequest.Get(url))
         {
+            request.SetRequestHeader("x-api-key", apiKey); // API anahtarýný header'a ekleme
+
             yield return request.SendWebRequest();
 
             if (request.responseCode == 200)
@@ -70,6 +73,7 @@ public class TMPInputFieldSubmitChecker : MonoBehaviour
             request.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
+            request.SetRequestHeader("x-api-key", apiKey); // API anahtarýný header'a ekleme
 
             yield return request.SendWebRequest();
 
